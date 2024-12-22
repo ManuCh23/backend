@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -12,15 +13,18 @@ class UserController extends Controller
      */
     public function index()
     {
-        return response()->json(User::all());
+        $users = User::all();
+        Log::info('Elenco degli utenti recuperato', ['users' => $users]);
+        return response()->json($users);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-
     public function store(Request $request)
     {
+        Log::info('Dati della richiesta per la creazione di un utente', ['request' => $request->all()]);
+
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -32,6 +36,9 @@ class UserController extends Controller
             'last_name' => $validatedData['last_name'],
             'email' => $validatedData['email'],
         ]);
+
+        Log::info('Utente creato con successo', ['user' => $user]);
+
         return response()->json([
             'message' => 'User created successfully',
             'user' => $user,
@@ -43,7 +50,9 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        return response()->json(User::findOrFail($id));
+        $user = User::findOrFail($id);
+        Log::info('Dettagli dell\'utente recuperati', ['user' => $user]);
+        return response()->json($user);
     }
 
     /**
@@ -51,12 +60,12 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        Log::info('Dati della richiesta per l\'aggiornamento di un utente', ['request' => $request->all()]);
 
         $request->validate(
             [
-
-                'first_name' => ['required', 'string', 'max:255',],
-                'last_name' => ['required', 'string', 'max:255',],
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'email'],
             ],
             [
@@ -69,12 +78,16 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
         if (!$user) {
+            Log::error('Utente non trovato', ['id' => $id]);
             return response()->json(['message' => 'User not found'], 404);
         }
+
         $user->first_name = $request->first_name;
         $user->last_name = $request->last_name;
         $user->email = $request->email;
         $user->save();
+
+        Log::info('Utente aggiornato con successo', ['user' => $user]);
 
         return response()->json($user);
     }
@@ -84,7 +97,12 @@ class UserController extends Controller
      */
     public function destroy(string $id)
     {
+        Log::info('Richiesta di eliminazione dell\'utente', ['id' => $id]);
+
         User::destroy($id);
+
+        Log::info('Utente eliminato con successo', ['id' => $id]);
+
         return response()->json(null, 204);
     }
 }
